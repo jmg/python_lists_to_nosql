@@ -1,4 +1,4 @@
-import uuid
+import time
 from src.backends import BaseCollectionsBackend
 try:
     from pymongo import MongoClient
@@ -8,22 +8,25 @@ except ImportError:
 
 class MongoCollectionsBackend(BaseCollectionsBackend):
 
-    _db_name = "__mongo_collections_db"
-    _collections_name_prefix = "__mongo_collections_collection"
+    _db_name_name_prefix = "__mongo_collections_db"
+    _collections_name = "__mongo_collections_collection"
 
     def __init__(self, profiling_level=0):
 
         super(MongoCollectionsBackend, self).__init__()
 
-        self.db = MongoClient()[self._db_name]
+        db_name_sufix = "{:.5f}".format(time.time()).replace(".", "_")
+        self.db_name = "{}_{}".format(self._db_name_name_prefix, db_name_sufix)
+
+        self.mongo_client = MongoClient()
+        self.db = self.mongo_client[self.db_name]
         self.db.set_profiling_level(profiling_level)
 
-        collections_name = "{}_{}".format(self._collections_name_prefix, uuid.uuid4())
-        self.db_collection = self.db[collections_name]
+        self.db_collection = self.db[self._collections_name]
 
     def __del__(self):
 
-        self.db_collection.drop()
+        self.mongo_client.drop_database(self.db_name)
 
     def __delitem__(self, index):
 
